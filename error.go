@@ -2,33 +2,36 @@ package logger
 
 import "runtime"
 
-type wrapperError struct {
+type errorWrapper struct {
 	Message    string
 	Context    Fields
-	Frame      *wrapperFrame
+	Frame      *errorFrame
 	InnerError error
 }
 
-type wrapperFrame struct {
+type errorFrame struct {
 	Function string
 	File     string
 	Line     int
 }
 
-func (e *wrapperError) Error() string {
-	return e.Message
+func (err *errorWrapper) Error() string {
+	return err.Message
 }
 
-var _ Fielder = (*wrapperError)(nil)
+var _ Fielder = (*errorWrapper)(nil)
 
-func (err *wrapperError) ToFields() Fields {
-	fields := Fields{
-		"message": err.Message,
-		"context": err.Context,
+// ToFields builds a Fields map containing all the information in the error
+// If a piece of information is missing the field won't be present
+func (err *errorWrapper) ToFields() Fields {
+	fields := Fields{"message": err.Message}
+
+	if err.Context != nil {
+		fields["context"] = err.Context
 	}
 
-	if innerError := errorToField(err.InnerError); innerError != nil {
-		fields["innerError"] = innerError
+	if err.InnerError != nil {
+		fields["innerError"] = errorToField(innerError)
 	}
 
 	if frame := err.Frame; frame != nil {
@@ -42,16 +45,20 @@ func (err *wrapperError) ToFields() Fields {
 	return fields
 }
 
+// WrapError annotates an error with an additional message
+// It also captures the location of the caller
 func WrapError(inner error, message string) error {
-	return &wrapperError{
+	return &errorWrapper{
 		Message:    message,
 		Frame:      getFrame(2),
 		InnerError: inner,
 	}
 }
 
+// WrapErrorWithContext annotates an error with an additional message and contextual fields
+// It also captures the location of the caller
 func WrapErrorWithContext(inner error, message string, context Fields) error {
-	return &wrapperError{
+	return &errorWrapper{
 		Message:    message,
 		Context:    context,
 		Frame:      getFrame(2),
@@ -59,8 +66,13 @@ func WrapErrorWithContext(inner error, message string, context Fields) error {
 	}
 }
 
+// WrapErrorWithContextAndStack annotates an error with an additional message and contextual fields
+// It also captures the location of a specific point in the call stack
+// caller -> stackSkip = 0
+// caller of the caller -> stackSkip = 1
+// etc...
 func WrapErrorWithContextAndStack(inner error, message string, context Fields, stackSkip int) error {
-	return &wrapperError{
+	return &errorWrapper{
 		Message:    message,
 		Context:    context,
 		Frame:      getFrame(2 + stackSkip),
@@ -68,7 +80,7 @@ func WrapErrorWithContextAndStack(inner error, message string, context Fields, s
 	}
 }
 
-func getFrame(skip int) *wrapperFrame {
+func getFrame(skip int) *errorFrame {
 	pc, file, line, ok := runtime.Caller(skip)
 	if !ok {
 		return nil
