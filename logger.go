@@ -3,8 +3,8 @@ package logger
 import (
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	logtry "github.com/evalphobia/logrus_sentry"
+	"github.com/sirupsen/logrus"
 )
 
 // Fields is for passing semi-structured data that doesn't already have a type to the logger
