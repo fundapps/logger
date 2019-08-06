@@ -35,6 +35,7 @@ func init() {
 		logrus.PanicLevel,
 		logrus.FatalLevel,
 		logrus.ErrorLevel,
+		logrus.WarnLevel,
 	})
 	if err != nil {
 		Fatal(err)
@@ -47,6 +48,16 @@ func init() {
 // This doesn't log to sentry
 func Info(message string, data Fields) {
 	log.WithFields(logrus.Fields(data)).Info(message)
+}
+
+// Warn logs with the given message & addition fields at the Warn Level
+func Warn(message string, data Fields) {
+	log.WithFields(logrus.Fields(data)).Warn(message)
+}
+
+// WarnError logs an error & fields at the Warn Level
+func WarnError(err error) {
+	log.WithField("error", errorToField(err)).Warn(err.Error())
 }
 
 // Error logs an error with the error message & converts the message to fields if Fielder is implemented
