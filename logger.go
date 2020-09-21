@@ -16,7 +16,9 @@ type Fielder interface {
 }
 
 var (
-	log    = logrus.New()
+	log          = logrus.New()
+	globalFields = logrus.Fields{}
+
 	sentry *logtry.SentryHook
 )
 
@@ -44,31 +46,35 @@ func init() {
 	log.Hooks.Add(sentry)
 }
 
+func SetGlobalFields(data Fields) {
+	globalFields = logrus.Fields(data)
+}
+
 // Info logs with the given message & addition fields at the INFO Level
 // This doesn't log to sentry
 func Info(message string, data Fields) {
-	log.WithFields(logrus.Fields(data)).Info(message)
+	log.WithFields(globalFields).WithFields(logrus.Fields(data)).Info(message)
 }
 
 // Warn logs with the given message & addition fields at the Warn Level
 func Warn(message string, data Fields) {
-	log.WithFields(logrus.Fields(data)).Warn(message)
+	log.WithFields(globalFields).WithFields(logrus.Fields(data)).Warn(message)
 }
 
 // WarnError logs an error & fields at the Warn Level
 func WarnError(err error) {
-	log.WithFields(errorToFields(err)).Warn(err.Error())
+	log.WithFields(globalFields).WithFields(errorToFields(err)).Warn(err.Error())
 }
 
 // Error logs an error with the error message & converts the message to fields if Fielder is implemented
 func Error(err error) {
-	log.WithFields(errorToFields(err)).Error(err.Error())
+	log.WithFields(globalFields).WithFields(errorToFields(err)).Error(err.Error())
 }
 
 // Fatal logs errors in the same way as Error then flushes the errors and calls os.Exit(1)
 func Fatal(err error) {
 	// this doesn't use log.Fatal because we need to flush the hook before exiting
-	log.WithFields(errorToFields(err)).Error(err.Error())
+	log.WithFields(globalFields).WithFields(errorToFields(err)).Error(err.Error())
 	Flush()
 	os.Exit(1)
 }
@@ -91,6 +97,6 @@ func errorToFields(err error) logrus.Fields {
 
 	return logrus.Fields{
 		"error": err.Error(),
-		"data": err,
+		"data":  err,
 	}
 }
