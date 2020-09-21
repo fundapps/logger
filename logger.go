@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+	"github.com/getsentry/raven-go"
 	"os"
 
 	logtry "github.com/evalphobia/logrus_sentry"
@@ -47,7 +49,23 @@ func init() {
 }
 
 func SetGlobalFields(data Fields) {
-	globalFields = logrus.Fields(data)
+	var tags raven.Tags
+
+	for key, value := range data {
+		var stringValue string
+		if str, ok := value.(string); ok {
+			stringValue = str
+		} else {
+			stringValue = fmt.Sprintf("%#v", value)
+		}
+
+		tags = append(tags, raven.Tag{
+			Key:   key,
+			Value: stringValue,
+		})
+	}
+
+	globalFields = logrus.Fields{"tags":tags}
 }
 
 // Info logs with the given message & addition fields at the INFO Level
