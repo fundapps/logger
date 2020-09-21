@@ -31,7 +31,7 @@ func (err *errorWrapper) ToFields() Fields {
 	}
 
 	if err.InnerError != nil {
-		fields["innerError"] = errorToField(err.InnerError)
+		fields["innerError"] = errorToFields(err.InnerError)
 	}
 
 	if frame := err.Frame; frame != nil {
