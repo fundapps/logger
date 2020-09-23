@@ -26,10 +26,6 @@ var _ Fielder = (*errorWrapper)(nil)
 func (err *errorWrapper) ToFields() Fields {
 	fields := Fields{"message": err.Message}
 
-	if err.Context != nil {
-		fields["context"] = err.Context
-	}
-
 	if err.InnerError != nil {
 		fields["innerError"] = errorToFields(err.InnerError)
 	}
@@ -40,6 +36,12 @@ func (err *errorWrapper) ToFields() Fields {
 		}
 		fields["file"] = frame.File
 		fields["line"] = frame.Line
+	}
+
+	if err.Context != nil {
+		for k, v := range err.Context {
+			fields[k] = v
+		}
 	}
 
 	return fields
